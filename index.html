@@ -202,7 +202,7 @@
             letter-spacing: 0.8px;
         }
 
-        /* Holographic Card Container */
+        /* Holographic Card Container (tilt removed, only cursor shine remains) */
         .card-container {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
@@ -215,11 +215,9 @@
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
             position: relative;
             overflow: hidden;
-            transform-style: preserve-3d;
-            transition: transform 0.1s ease-out, border-color 0.3s ease, box-shadow 0.3s ease;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* Dynamic holographic shine overlay */
         .card-container::before {
             content: '';
             position: absolute;
@@ -299,7 +297,7 @@
             letter-spacing: 1px;
         }
 
-        /* Pixel Avatar Grid */
+        /* Pixel Avatar Grid — now reflects quality within rarity via inline styles */
         .pixel-avatar {
             display: grid;
             grid-template-columns: repeat(5, 20px);
@@ -316,10 +314,16 @@
             border-radius: 3px;
             transition: background 0.3s;
         }
-        .pixel.on { background: #ec4899; box-shadow: 0 0 10px #ec4899; }
-        .pixel.alt { background: #8b5cf6; box-shadow: 0 0 8px #8b5cf6; }
-        .pixel.gold { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
-        .pixel.cyan { background: #06b6d4; box-shadow: 0 0 10px #06b6d4; }
+
+        .quality-note {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            z-index: 2;
+        }
 
         /* Formula details breakdown */
         .formula-breakdown {
@@ -420,7 +424,7 @@
         window.isAlreadyClaimed = false;
 
         (function() {
-            const CURRENT_VERSION = '4.5'; 
+            const CURRENT_VERSION = '5.1'; 
             const savedVersion = localStorage.getItem('app_version');
 
             if (savedVersion !== CURRENT_VERSION) {
@@ -431,6 +435,7 @@
                 localStorage.removeItem('drop_base');
                 localStorage.removeItem('drop_multiplier');
                 localStorage.removeItem('drop_power');
+                localStorage.removeItem('drop_quality');
                 
                 localStorage.setItem('app_version', CURRENT_VERSION);
             }
@@ -446,9 +451,10 @@
                 const base = localStorage.getItem('drop_base') || '0';
                 const multiplier = localStorage.getItem('drop_multiplier') || '1.0';
                 const power = localStorage.getItem('drop_power') || '0';
+                const quality = localStorage.getItem('drop_quality') || '0';
 
                 if (avatar && rarityText) {
-                    window.initialDropData = { avatar, rarityText, rarityClass, base, multiplier, power };
+                    window.initialDropData = { avatar, rarityText, rarityClass, base, multiplier, power, quality };
                 }
             }
         })();
@@ -501,6 +507,12 @@
                 </script>
             </div>
 
+            <div class="quality-note" id="qualityNote">
+                <script>
+                    document.write(window.initialDropData ? `Quality: ${window.initialDropData.quality}% within category` : 'Quality: —');
+                </script>
+            </div>
+
             <div class="formula-breakdown" id="formulaBreakdown">
                 <script>
                     if (window.initialDropData) {
@@ -531,30 +543,52 @@
         let clicksRemaining = 10;
         const totalClicksNeeded = 10;
 
-        function generateRandomAvatar() {
+        // Ranges must match the formulas used in rollRarity() below
+        const RARITY_INFO = {
+            common:    { min: 1000,  max: 4499,   color: '156,163,175' }, // grey
+            rare:      { min: 5000,  max: 14999,  color: '59,130,246'  }, // blue
+            epic:      { min: 20000, max: 49999,  color: '236,72,153'  }, // pink
+            legendary: { min: 75000, max: 199999, color: '245,158,11'  }  // gold
+        };
+
+        // Generates the 5x5 pixel grid, but density/brightness reflect
+        // how good this base roll is *within its own rarity's range*.
+        function generateAvatarForRarity(cssClass, basePower) {
+            const info = RARITY_INFO[cssClass] || RARITY_INFO.common;
+            let quality = (basePower - info.min) / (info.max - info.min);
+            quality = Math.max(0, Math.min(1, quality));
+
             let html = '<div class="pixel-avatar">';
-            const types = ['', 'on', 'alt', 'gold', 'cyan'];
             for (let i = 0; i < 25; i++) {
-                const cls = types[Math.floor(Math.random() * types.length)];
-                html += `<div class="pixel ${cls}"></div>`;
+                // chance a cell lights up scales with quality
+                const litChance = 0.15 + quality * 0.75;
+                if (Math.random() < litChance) {
+                    // brightness of a lit cell also scales with quality (+ a little noise)
+                    const intensity = Math.min(1, 0.4 + quality * 0.55 + Math.random() * 0.15);
+                    const glow = (3 + quality * 11).toFixed(0);
+                    html += `<div class="pixel" style="background: rgba(${info.color}, ${intensity.toFixed(2)}); box-shadow: 0 0 ${glow}px rgba(${info.color}, ${(intensity * 0.85).toFixed(2)});"></div>`;
+                } else {
+                    html += '<div class="pixel"></div>';
+                }
             }
             html += '</div>';
-            return html;
+
+            return { html, quality: Math.round(quality * 100) };
         }
 
         function rollRarity() {
             const rand = Math.random() * 100;
             if (rand < 2.0) {
-                const base = Math.floor(Math.random() * 125000) + 75000;
+                const base = Math.floor(Math.random() * 125000) + 75000; // 75000-199999
                 return { name: 'Legendary Apex', cssClass: 'legendary', basePower: base };
             } else if (rand < 10.0) {
-                const base = Math.floor(Math.random() * 30000) + 20000;
+                const base = Math.floor(Math.random() * 30000) + 20000; // 20000-49999
                 return { name: 'Epic Cyber Core', cssClass: 'epic', basePower: base };
             } else if (rand < 35.0) {
-                const base = Math.floor(Math.random() * 10000) + 5000;
+                const base = Math.floor(Math.random() * 10000) + 5000; // 5000-14999
                 return { name: 'Rare Quantum Item', cssClass: 'rare', basePower: base };
             } else {
-                const base = Math.floor(Math.random() * 3500) + 1000;
+                const base = Math.floor(Math.random() * 3500) + 1000; // 1000-4499
                 return { name: 'Common Drop', cssClass: 'common', basePower: base };
             }
         }
@@ -651,26 +685,18 @@
             }
         }
 
-        // Holographic Card Tilt Effect with Mouse/Touch coordinates
+        // Holographic shine follows cursor — no tilt/rotation
         const cardContainer = document.getElementById('cardContainer');
         cardContainer.addEventListener('mousemove', (e) => {
             const rect = cardContainer.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
+
             cardContainer.style.setProperty('--mouse-x', `${(x / rect.width) * 100}%`);
             cardContainer.style.setProperty('--mouse-y', `${(y / rect.height) * 100}%`);
-
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            const rotateX = ((y - centerY) / centerY) * -6;
-            const rotateY = ((x - centerX) / centerX) * 6;
-
-            cardContainer.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
         });
 
         cardContainer.addEventListener('mouseleave', () => {
-            cardContainer.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
             cardContainer.style.setProperty('--mouse-x', '50%');
             cardContainer.style.setProperty('--mouse-y', '50%');
         });
@@ -740,7 +766,6 @@
 
             playVictorySound();
 
-            // Trigger Canvas Confetti explosion!
             if (typeof confetti === 'function') {
                 confetti({
                     particleCount: 120,
@@ -751,13 +776,14 @@
             }
 
             const rolled = rollRarity();
-            const avatarHTML = generateRandomAvatar();
+            const { html: avatarHTML, quality } = generateAvatarForRarity(rolled.cssClass, rolled.basePower);
 
             const randomMultiplier = (Math.random() * 2.0 + 1.0).toFixed(1);
             const finalPower = Math.floor(rolled.basePower * parseFloat(randomMultiplier));
 
             document.getElementById('itemDisplay').innerHTML = avatarHTML;
-            
+            document.getElementById('qualityNote').innerText = `Quality: ${quality}% within category`;
+
             const rarityTag = document.getElementById('itemRarity');
             rarityTag.innerText = rolled.name;
             rarityTag.className = `rarity-tag ${rolled.cssClass}`;
@@ -766,7 +792,6 @@
             document.getElementById('formulaBreakdown').innerHTML = `<span>Base:</span> ${rolled.basePower.toLocaleString()} &nbsp;×&nbsp; <span>Mult:</span> ${randomMultiplier}`;
             document.getElementById('totalPower').innerText = finalPower.toLocaleString();
 
-            // Add bounce effect to card
             const card = document.getElementById('cardContainer');
             card.classList.add('bounce-effect');
             setTimeout(() => card.classList.remove('bounce-effect'), 400);
@@ -778,6 +803,7 @@
             localStorage.setItem('drop_base', rolled.basePower);
             localStorage.setItem('drop_multiplier', randomMultiplier);
             localStorage.setItem('drop_power', finalPower);
+            localStorage.setItem('drop_quality', quality);
 
             lockClickerUI();
         }
@@ -793,11 +819,6 @@
 
             const cardElement = document.querySelector('.card-container');
             const botUrl = 'https://t.me/Daily_Catch_Bot';
-            const total = document.getElementById('totalPower').innerText;
-            const rarity = document.getElementById('itemRarity').innerText;
-            const mult = document.getElementById('multiplierBadge').innerText;
-            
-            const shareText = `🔥 My Daily Catch Drop!\n🏆 ${rarity}\n⚡ Power Score: ${total} (${mult})\n\n👉 Try your luck in @Daily_Catch_Bot`;
 
             try {
                 const canvas = await html2canvas(cardElement, {
@@ -816,10 +837,8 @@
 
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         try {
-                            await navigator.share({
-                                files: [file],
-                                text: shareText
-                            });
+                            // Image only — no accompanying share text
+                            await navigator.share({ files: [file] });
                         } catch (err) {
                             if (err.name !== 'AbortError') {
                                 console.log('Share error:', err);
@@ -827,7 +846,7 @@
                         }
                     } else {
                         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
-                            window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(shareText)}`);
+                            window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}`);
                         } else {
                             alert('Sharing images as files is not supported on this device/browser.');
                         }
