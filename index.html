@@ -130,12 +130,12 @@
             font-weight: 600;
         }
 
-        /* Shareable Card Container (Все внутри единого блока для скриншота со score) */
+        /* Shareable Card Container (Единый блок для скриншота со всей инфой) */
         .card-container {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            padding: 12px;
+            padding: 14px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -184,7 +184,7 @@
             letter-spacing: 1px;
         }
 
-        /* Pixel Avatar (Scaled Up) */
+        /* Pixel Avatar */
         .pixel-avatar {
             display: grid;
             grid-template-columns: repeat(5, 14px);
@@ -266,14 +266,25 @@
             font-weight: 600;
         }
 
-        /* Watermark Tag for Screenshot */
+        /* Footer inside card for Screenshot (Bot handle & Call to action) */
+        .card-footer-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 8px;
+            margin-top: 2px;
+        }
+        .card-bot-link {
+            font-size: 12px;
+            color: #c084fc;
+            font-weight: 800;
+        }
         .card-watermark {
-            text-align: right;
             font-size: 11px;
             color: rgba(255, 255, 255, 0.4);
             font-weight: 700;
             letter-spacing: 0.5px;
-            margin-top: -2px;
         }
 
         /* Share Button */
@@ -305,7 +316,7 @@
         window.isAlreadyClaimed = false;
 
         (function() {
-            const CURRENT_VERSION = '2.6'; 
+            const CURRENT_VERSION = '2.7'; 
             const savedVersion = localStorage.getItem('app_version');
 
             if (savedVersion !== CURRENT_VERSION) {
@@ -376,7 +387,7 @@
             </script>
         </div>
 
-        <!-- Карточка целиком (включая Score) для правильного скриншота -->
+        <!-- Карточка целиком (включая Score и ссылки) попадает в скриншот -->
         <div class="card-container">
             <div class="item-header">
                 <script>
@@ -416,7 +427,11 @@
                 </div>
             </div>
 
-            <div class="card-watermark">@Daily_Catch_Bot</div>
+            <!-- Вся информация о боте теперь прямо на картинке -->
+            <div class="card-footer-info">
+                <span class="card-bot-link">t.me/Daily_Catch_Bot</span>
+                <span class="card-watermark">Daily Drop</span>
+            </div>
         </div>
 
         <button class="share-btn" onclick="shareToTelegram()">📤 Share Drop</button>
@@ -593,10 +608,10 @@
 
             const cardElement = document.querySelector('.card-container');
             const botUrl = 'https://t.me/Daily_Catch_Bot';
-            const total = document.getElementById('totalPower').innerText;
-            const rarity = document.getElementById('itemRarity').innerText;
             
-            const shareText = `🔥 My Daily Catch Drop!\n🏆 Rarity: ${rarity}\n⚡ Total Power: ${total}\n\n👉 Get yours in @Daily_Catch_Bot: ${botUrl}`;
+            // Текст теперь передаем пустой, чтобы в чат улетала исключительно одна картинка, 
+            // так как вся информация (Score, редкость, ссылка на бота) уже запечена на самой картинке.
+            const shareText = ''; 
 
             try {
                 const canvas = await html2canvas(cardElement, {
@@ -615,7 +630,6 @@
 
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         try {
-                            // Передаем картинку вместе с текстом в одном вызове, чтобы телеграм не разбивал это на 2 сообщения
                             await navigator.share({
                                 files: [file],
                                 text: shareText
@@ -627,7 +641,7 @@
                         }
                     } else {
                         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
-                            window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(shareText)}`);
+                            window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent('My Daily Catch Drop!')}`);
                         } else {
                             alert('Sharing images as files is not supported on this device/browser.');
                         }
