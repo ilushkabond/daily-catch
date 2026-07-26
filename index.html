@@ -130,7 +130,7 @@
             font-weight: 600;
         }
 
-        /* Shareable Card Container (Все теперь внутри единого блока для скриншота) */
+        /* Shareable Card Container (Все внутри единого блока для скриншота со score) */
         .card-container {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -305,7 +305,7 @@
         window.isAlreadyClaimed = false;
 
         (function() {
-            const CURRENT_VERSION = '2.5'; 
+            const CURRENT_VERSION = '2.6'; 
             const savedVersion = localStorage.getItem('app_version');
 
             if (savedVersion !== CURRENT_VERSION) {
@@ -376,7 +376,7 @@
             </script>
         </div>
 
-        <!-- Все элементы дропа объединены в одну карточку для корректного скриншота и компактности -->
+        <!-- Карточка целиком (включая Score) для правильного скриншота -->
         <div class="card-container">
             <div class="item-header">
                 <script>
@@ -416,7 +416,6 @@
                 </div>
             </div>
 
-            <!-- Брендинг/тег бота на самой карточке для скриншота -->
             <div class="card-watermark">@Daily_Catch_Bot</div>
         </div>
 
@@ -616,9 +615,9 @@
 
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         try {
+                            // Передаем картинку вместе с текстом в одном вызове, чтобы телеграм не разбивал это на 2 сообщения
                             await navigator.share({
                                 files: [file],
-                                title: 'Daily Catch Drop',
                                 text: shareText
                             });
                         } catch (err) {
