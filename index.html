@@ -23,9 +23,10 @@
 
         html, body {
             height: 100%;
-            overflow-x: hidden;
         }
 
+        /* Body is now the full-viewport stage — it centers the app card
+           instead of just being a stretched mobile column on wide screens */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
@@ -34,12 +35,12 @@
                 radial-gradient(circle at 10% 90%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
                 radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.12) 0%, transparent 50%);
             color: var(--text-main);
+            min-height: 100%;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
             padding: 8px;
-            max-width: 480px;
-            margin: 0 auto;
-            gap: 8px;
         }
 
         .main-content {
@@ -48,6 +49,8 @@
             gap: 8px;
             position: relative;
             z-index: 2;
+            width: 100%;
+            max-width: 480px;
         }
 
         .top-bar {
@@ -106,6 +109,10 @@
             justify-content: center;
             transition: all 0.2s;
         }
+        .sound-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(139, 92, 246, 0.6);
+        }
         .sound-btn:active {
             transform: scale(0.9);
         }
@@ -150,6 +157,9 @@
         }
         .clicker-target:hover img {
             filter: drop-shadow(0 0 24px rgba(236, 72, 153, 0.9));
+        }
+        .clicker-target:hover {
+            transform: scale(1.03);
         }
         .clicker-target:active {
             transform: scale(0.88);
@@ -418,6 +428,10 @@
         .share-btn.hidden {
             display: none;
         }
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(59, 130, 246, 0.5);
+        }
         .share-btn:active {
             transform: scale(0.97);
             box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
@@ -477,14 +491,21 @@
             font-weight: 800;
             font-size: 13px;
             cursor: pointer;
+            transition: all 0.15s ease;
         }
         .feedback-cancel {
             background: rgba(255,255,255,0.08);
             color: var(--text-main);
         }
+        .feedback-cancel:hover {
+            background: rgba(255,255,255,0.14);
+        }
         .feedback-send {
             background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             color: #fff;
+        }
+        .feedback-send:hover:not(:disabled) {
+            filter: brightness(1.1);
         }
         .feedback-send:disabled { opacity: 0.5; cursor: not-allowed; }
         .feedback-status {
@@ -492,6 +513,60 @@
             text-align: center;
             color: var(--text-muted);
             min-height: 14px;
+        }
+
+        /* ---------- Desktop presentation ---------- */
+        /* Telegram Mini App viewports (mobile + narrow desktop app window) stay untouched.
+           Wider browser windows get a framed "floating card" look instead of a
+           stretched-thin mobile column pinned to the corner. */
+        @media (min-width: 640px) {
+            body {
+                padding: 40px 20px;
+            }
+
+            .main-content {
+                max-width: 420px;
+                padding: 24px;
+                background: rgba(10, 12, 22, 0.55);
+                border: 1px solid var(--border-color);
+                border-radius: 28px;
+                box-shadow: 0 40px 90px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            }
+
+            .app-title {
+                font-size: 17px;
+            }
+
+            .rate-badge {
+                font-size: 10px;
+                padding: 3px 6px;
+            }
+
+            .sound-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
+            }
+
+            .clicker-target {
+                width: 108px;
+                height: 108px;
+            }
+
+            .power-value {
+                font-size: 26px;
+            }
+
+            .share-btn {
+                padding: 13px;
+                font-size: 14px;
+            }
+
+            .share-btn:hover,
+            .sound-btn:hover,
+            .clicker-target:hover {
+                cursor: pointer;
+            }
         }
     </style>
 
@@ -512,7 +587,7 @@
         }
 
         (function() {
-            const CURRENT_VERSION = '5.5'; 
+            const CURRENT_VERSION = '5.6'; 
             const savedVersion = localStorage.getItem('app_version');
 
             if (savedVersion !== CURRENT_VERSION) {
@@ -943,55 +1018,73 @@
             setTimeout(() => card.classList.remove('bounce-effect'), 400);
         }
 
-        async function shareToTelegram() {
-            const lastClaimDate = localStorage.getItem('daily_drop_last_claim');
-            const today = new Date().toDateString();
+        function isTelegramMobileApp() {
+    return !!(
+        window.Telegram &&
+        window.Telegram.WebApp &&
+        (window.Telegram.WebApp.platform === 'ios' || window.Telegram.WebApp.platform === 'android')
+    );
+}
 
-            if (lastClaimDate !== today) {
-                alert('Open your drop first before sharing!');
-                return;
-            }
+	async function shareToTelegram() {
+		const lastClaimDate = localStorage.getItem('daily_drop_last_claim');
+		const today = new Date().toDateString();
 
-            const cardElement = document.querySelector('.card-container');
-            const botUrl = 'https://t.me/Daily_Catch_Bot';
+		if (lastClaimDate !== today) {
+			alert('Open your drop first before sharing!');
+			return;
+		}
 
-            try {
-                const canvas = await html2canvas(cardElement, {
-                    backgroundColor: '#070913',
-                    scale: 2,
-                    logging: false
-                });
+		const cardElement = document.querySelector('.card-container');
 
-                canvas.toBlob(async (blob) => {
-                    if (!blob) {
-                        alert('Failed to generate image.');
-                        return;
-                    }
+		try {
+			const canvas = await html2canvas(cardElement, {
+				backgroundColor: '#070913',
+				scale: 2,
+				logging: false
+			});
 
-                    const file = new File([blob], 'daily-drop.png', { type: 'image/png' });
+			canvas.toBlob(async (blob) => {
+				if (!blob) {
+					alert('Failed to generate image.');
+					return;
+				}
 
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({ files: [file] });
-                        } catch (err) {
-                            if (err.name !== 'AbortError') {
-                                console.log('Share error:', err);
-                            }
-                        }
-                    } else {
-                        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
-                            window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}`);
-                        } else {
-                            alert('Sharing images as files is not supported on this device/browser.');
-                        }
-                    }
-                }, 'image/png');
+				const file = new File([blob], 'daily-drop.png', { type: 'image/png' });
 
-            } catch (error) {
-                console.error('Screenshot error:', error);
-                alert('Could not create drop image.');
-            }
-        }
+				// Native share sheet ONLY inside the real Telegram mobile app (iOS/Android WebView).
+				// Everywhere else — desktop browsers, Telegram Desktop, random Chrome/Edge — just download.
+				if (isTelegramMobileApp() && navigator.canShare && navigator.canShare({ files: [file] })) {
+					try {
+						await navigator.share({ files: [file] });
+						return;
+					} catch (err) {
+						if (err.name === 'AbortError') return; // user cancelled, don't fall through to download
+						console.log('Share error:', err);
+						// fall through to download as a backup
+					}
+				}
+
+				downloadBlob(blob, 'daily-drop.png');
+
+			}, 'image/png');
+
+		} catch (error) {
+			console.error('Screenshot error:', error);
+			alert('Could not create drop image.');
+		}
+	}
+
+	function downloadBlob(blob, filename) {
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		setTimeout(() => URL.revokeObjectURL(url), 1000);
+	}
 
         // ---------- Feedback form ----------
 
@@ -1044,42 +1137,42 @@
         }
 
         async function sendFeedback() {
-			const textEl = document.getElementById('feedbackText');
-			const message = textEl.value.trim();
-			const status = document.getElementById('feedbackStatus');
+            const textEl = document.getElementById('feedbackText');
+            const message = textEl.value.trim();
+            const status = document.getElementById('feedbackStatus');
 
-			if (message.length < 3) {
-				status.innerText = 'Напиши чуть подробнее :)';
-				return;
-			}
-			if (getFeedbackCooldownRemaining() > 0) {
-				updateFeedbackButtonState();
-				return;
-			}
+            if (message.length < 3) {
+                status.innerText = 'Напиши чуть подробнее :)';
+                return;
+            }
+            if (getFeedbackCooldownRemaining() > 0) {
+                updateFeedbackButtonState();
+                return;
+            }
 
-			const btn = document.getElementById('feedbackSendBtn');
-			btn.disabled = true;
-			status.innerText = 'Отправляю...';
+            const btn = document.getElementById('feedbackSendBtn');
+            btn.disabled = true;
+            status.innerText = 'Отправляю...';
 
-			// Raw signed string Telegram itself generated on launch — this is what gets verified server-side
-			const initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || '';
+            // Raw signed string Telegram itself generated on launch — this is what gets verified server-side
+            const initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || '';
 
-			try {
-				await fetch(FEEDBACK_ENDPOINT, {
-					method: 'POST',
-					mode: 'no-cors',
-					body: JSON.stringify({ message, initData })
-				});
+            try {
+                await fetch(FEEDBACK_ENDPOINT, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ message, initData })
+                });
 
-				localStorage.setItem('feedback_last_sent', String(Date.now()));
-				status.innerText = 'Спасибо! Отправлено ✅';
-				textEl.value = '';
-				setTimeout(closeFeedback, 900);
-			} catch (err) {
-				status.innerText = 'Ошибка отправки, попробуй ещё раз';
-				btn.disabled = false;
-			}
-		}
+                localStorage.setItem('feedback_last_sent', String(Date.now()));
+                status.innerText = 'Спасибо! Отправлено ✅';
+                textEl.value = '';
+                setTimeout(closeFeedback, 900);
+            } catch (err) {
+                status.innerText = 'Ошибка отправки, попробуй ещё раз';
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
