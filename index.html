@@ -56,6 +56,7 @@
             align-items: center;
             font-size: 13px;
             font-weight: 700;
+            gap: 6px;
         }
 
         .app-title {
@@ -85,6 +86,11 @@
         .rate-badge.legendary { color: #f59e0b; border-color: rgba(245, 158, 11, 0.5); text-shadow: 0 0 8px rgba(245,158,11,0.5); }
         .rate-badge.epic { color: #ec4899; border-color: rgba(236, 72, 153, 0.5); text-shadow: 0 0 8px rgba(236,72,153,0.5); }
         .rate-badge.rare { color: #3b82f6; border-color: rgba(59, 130, 246, 0.5); }
+
+        .icon-btn-group {
+            display: flex;
+            gap: 5px;
+        }
 
         .sound-btn {
             background: rgba(255, 255, 255, 0.05);
@@ -229,7 +235,6 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* Card — no cursor-tilt / flashlight shine */
         .card-container {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
@@ -285,7 +290,6 @@
             border-radius: 8px;
         }
 
-        /* Item box — flex-centered both axes so the avatar sits dead-center */
         .item-box {
             height: 88px;
             background: rgba(0, 0, 0, 0.4);
@@ -313,7 +317,6 @@
             gap: 2px;
             animation: floatAvatar 4s ease-in-out infinite alternate;
         }
-        /* Symmetric float range around center, so it doesn't visually drift down */
         @keyframes floatAvatar {
             0% { transform: translateY(-2px) rotate(-1deg); }
             100% { transform: translateY(2px) rotate(1deg); }
@@ -419,6 +422,77 @@
             transform: scale(0.97);
             box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
         }
+
+        /* Feedback modal */
+        .feedback-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        .feedback-overlay.hidden { display: none; }
+
+        .feedback-modal {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .feedback-title {
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        .feedback-textarea {
+            width: 100%;
+            min-height: 90px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: var(--text-main);
+            padding: 10px;
+            font-size: 13px;
+            font-family: inherit;
+            resize: none;
+        }
+        .feedback-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .feedback-cancel, .feedback-send {
+            flex: 1;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .feedback-cancel {
+            background: rgba(255,255,255,0.08);
+            color: var(--text-main);
+        }
+        .feedback-send {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff;
+        }
+        .feedback-send:disabled { opacity: 0.5; cursor: not-allowed; }
+        .feedback-status {
+            font-size: 11px;
+            text-align: center;
+            color: var(--text-muted);
+            min-height: 14px;
+        }
     </style>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -438,7 +512,7 @@
         }
 
         (function() {
-            const CURRENT_VERSION = '5.4'; 
+            const CURRENT_VERSION = '5.5'; 
             const savedVersion = localStorage.getItem('app_version');
 
             if (savedVersion !== CURRENT_VERSION) {
@@ -484,7 +558,10 @@
                 <span class="rate-badge epic">🔮 8%</span>
                 <span class="rate-badge rare">💎 25%</span>
             </div>
-            <button class="sound-btn" id="soundToggle" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+            <div class="icon-btn-group">
+                <button class="sound-btn" id="feedbackBtn" onclick="openFeedback()" title="Feedback">✉️</button>
+                <button class="sound-btn" id="soundToggle" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+            </div>
         </div>
 
         <!-- Big clicker: shown only before today's drop is opened -->
@@ -561,6 +638,19 @@
         </div>
 
         <button class="share-btn hidden" id="shareBtn" onclick="shareToTelegram()">📤 Share Drop</button>
+    </div>
+
+    <!-- Feedback modal -->
+    <div class="feedback-overlay hidden" id="feedbackOverlay" onclick="closeFeedbackOnOverlay(event)">
+        <div class="feedback-modal">
+            <div class="feedback-title">Оставить фидбек</div>
+            <textarea id="feedbackText" class="feedback-textarea" placeholder="Что улучшить, что бесит, что понравилось..." maxlength="1000"></textarea>
+            <div class="feedback-actions">
+                <button class="feedback-cancel" onclick="closeFeedback()">Отмена</button>
+                <button class="feedback-send" id="feedbackSendBtn" onclick="sendFeedback()">Отправить</button>
+            </div>
+            <div class="feedback-status" id="feedbackStatus"></div>
+        </div>
     </div>
 
     <script>
@@ -902,6 +992,94 @@
                 alert('Could not create drop image.');
             }
         }
+
+        // ---------- Feedback form ----------
+
+        const FEEDBACK_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzAyDWdBiZ_CRTco3qGM3A4kP4AWRJPq_spdHmiy0yDPOpP8lKkBGIvNj_p8MZQUzY/exec';
+        const FEEDBACK_COOLDOWN_MS = 3 * 60 * 1000; // 3 minutes — mirrors the server-side cooldown
+        let feedbackCooldownInterval = null;
+
+        function getFeedbackCooldownRemaining() {
+            const last = parseInt(localStorage.getItem('feedback_last_sent') || '0', 10);
+            return Math.max(0, FEEDBACK_COOLDOWN_MS - (Date.now() - last));
+        }
+
+        function updateFeedbackButtonState() {
+            const btn = document.getElementById('feedbackSendBtn');
+            const status = document.getElementById('feedbackStatus');
+            const remaining = getFeedbackCooldownRemaining();
+
+            if (remaining > 0) {
+                btn.disabled = true;
+                const secs = Math.ceil(remaining / 1000);
+                status.innerText = `Можно отправить ещё раз через ${secs}с`;
+            } else {
+                btn.disabled = false;
+                if (status.innerText.startsWith('Можно отправить')) status.innerText = '';
+                if (feedbackCooldownInterval) {
+                    clearInterval(feedbackCooldownInterval);
+                    feedbackCooldownInterval = null;
+                }
+            }
+        }
+
+        function openFeedback() {
+            document.getElementById('feedbackOverlay').classList.remove('hidden');
+            updateFeedbackButtonState();
+            if (getFeedbackCooldownRemaining() > 0 && !feedbackCooldownInterval) {
+                feedbackCooldownInterval = setInterval(updateFeedbackButtonState, 1000);
+            }
+        }
+
+        function closeFeedback() {
+            document.getElementById('feedbackOverlay').classList.add('hidden');
+            if (feedbackCooldownInterval) {
+                clearInterval(feedbackCooldownInterval);
+                feedbackCooldownInterval = null;
+            }
+        }
+
+        function closeFeedbackOnOverlay(e) {
+            if (e.target.id === 'feedbackOverlay') closeFeedback();
+        }
+
+        async function sendFeedback() {
+			const textEl = document.getElementById('feedbackText');
+			const message = textEl.value.trim();
+			const status = document.getElementById('feedbackStatus');
+
+			if (message.length < 3) {
+				status.innerText = 'Напиши чуть подробнее :)';
+				return;
+			}
+			if (getFeedbackCooldownRemaining() > 0) {
+				updateFeedbackButtonState();
+				return;
+			}
+
+			const btn = document.getElementById('feedbackSendBtn');
+			btn.disabled = true;
+			status.innerText = 'Отправляю...';
+
+			// Raw signed string Telegram itself generated on launch — this is what gets verified server-side
+			const initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || '';
+
+			try {
+				await fetch(FEEDBACK_ENDPOINT, {
+					method: 'POST',
+					mode: 'no-cors',
+					body: JSON.stringify({ message, initData })
+				});
+
+				localStorage.setItem('feedback_last_sent', String(Date.now()));
+				status.innerText = 'Спасибо! Отправлено ✅';
+				textEl.value = '';
+				setTimeout(closeFeedback, 900);
+			} catch (err) {
+				status.innerText = 'Ошибка отправки, попробуй ещё раз';
+				btn.disabled = false;
+			}
+		}
     </script>
 </body>
 </html>
