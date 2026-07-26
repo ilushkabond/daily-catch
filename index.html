@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Daily Catch</title>
+    <title>Daily Catch — Ultimate Edition</title>
     <style>
         *, *::before, *::after {
             box-sizing: border-box;
@@ -12,13 +12,13 @@
         }
 
         :root {
-            --bg-color: #0b0f19;
-            --card-bg: rgba(20, 24, 39, 0.95);
-            --border-color: rgba(139, 92, 246, 0.4);
+            --bg-color: #070913;
+            --card-bg: rgba(16, 20, 35, 0.85);
+            --border-color: rgba(139, 92, 246, 0.3);
             --primary-glow: #8b5cf6;
             --accent-pink: #ec4899;
             --text-main: #f3f4f6;
-            --text-muted: #d1d5db;
+            --text-muted: #9ca3af;
         }
 
         html, body {
@@ -30,8 +30,9 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             background-image: 
-                radial-gradient(circle at 50% 10%, rgba(139, 92, 246, 0.15) 0%, transparent 60%),
-                radial-gradient(circle at 10% 90%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+                radial-gradient(circle at 50% 5%, rgba(139, 92, 246, 0.22) 0%, transparent 55%),
+                radial-gradient(circle at 10% 90%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.12) 0%, transparent 50%);
             color: var(--text-main);
             display: flex;
             flex-direction: column;
@@ -45,7 +46,9 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            padding-bottom: 20px;
+            padding-bottom: 30px;
+            position: relative;
+            z-index: 2;
         }
 
         /* Top Bar */
@@ -58,13 +61,14 @@
         }
 
         .app-title {
-            font-size: 18px;
+            font-size: 19px;
             font-weight: 900;
-            background: linear-gradient(90deg, #c084fc, #f43f5e);
+            background: linear-gradient(135deg, #c084fc, #f43f5e, #38bdf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            filter: drop-shadow(0 0 10px rgba(192, 132, 252, 0.4));
         }
 
         .drop-rates {
@@ -73,250 +77,350 @@
         }
 
         .rate-badge {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-color);
             padding: 3px 8px;
             border-radius: 6px;
-            font-size: 13px;
+            font-size: 11px;
+            font-weight: 800;
         }
-        .rate-badge.legendary { color: #f59e0b; border-color: rgba(245, 158, 11, 0.5); }
-        .rate-badge.epic { color: #ec4899; border-color: rgba(236, 72, 153, 0.5); }
+        .rate-badge.legendary { color: #f59e0b; border-color: rgba(245, 158, 11, 0.5); text-shadow: 0 0 8px rgba(245,158,11,0.5); }
+        .rate-badge.epic { color: #ec4899; border-color: rgba(236, 72, 153, 0.5); text-shadow: 0 0 8px rgba(236,72,153,0.5); }
         .rate-badge.rare { color: #3b82f6; border-color: rgba(59, 130, 246, 0.5); }
 
         .sound-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
             cursor: pointer;
-            font-size: 18px;
-            padding: 4px;
+            font-size: 16px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .sound-btn:active {
+            transform: scale(0.9);
         }
 
-        /* Summon Section */
-        .summon-box {
+        /* Interactive Clicker Box (Dopamine Generator) */
+        .clicker-box {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            align-items: center;
+            gap: 10px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(139, 92, 246, 0.05);
         }
 
-        .summon-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #8b5cf6, #ec4899);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: 900;
+        .clicker-target {
+            width: 120px;
+            height: 120px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-            transition: transform 0.1s ease;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
+            position: relative;
+            transition: transform 0.05s ease;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .summon-btn:active {
-            transform: scale(0.98);
+        .clicker-target img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.7));
+            transition: filter 0.3s;
         }
-        .summon-btn:disabled {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-muted);
-            cursor: not-allowed;
-            box-shadow: none;
+        .clicker-target:hover img {
+            filter: drop-shadow(0 0 24px rgba(236, 72, 153, 0.9));
         }
-        .summon-status {
+        .clicker-target:active {
+            transform: scale(0.88);
+        }
+
+        @keyframes boxShake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-4px, 1px) rotate(-3deg); }
+            40% { transform: translate(4px, -2px) rotate(3deg); }
+            60% { transform: translate(-2px, 3px) rotate(0deg); }
+            80% { transform: translate(3px, -1px) rotate(-2deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .shake {
+            animation: boxShake 0.25s ease-in-out;
+        }
+
+        @keyframes bouncePop {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.18); }
+            70% { transform: scale(0.92); }
+            100% { transform: scale(1); }
+        }
+        .bounce-effect {
+            animation: bouncePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            height: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899, #f59e0b);
+            background-size: 200% 100%;
+            animation: gradientMove 3s linear infinite;
+            transition: width 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .clicker-status {
             text-align: center;
             font-size: 13px;
             color: var(--text-muted);
-            font-weight: 600;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
         }
 
-        /* Shareable Card Container (Единый блок для скриншота со всей инфой) */
+        /* Holographic Card Container */
         .card-container {
             background: var(--card-bg);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 14px;
+            border-radius: 20px;
+            padding: 18px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+            gap: 12px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
             position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Dynamic holographic shine overlay */
+        .card-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(255, 255, 255, 0.18) 0%,
+                rgba(139, 92, 246, 0.08) 35%,
+                transparent 70%
+            );
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 3;
+        }
+        .card-container:hover::before {
+            opacity: 1;
         }
 
         .item-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            z-index: 2;
         }
 
         .rarity-tag {
             font-size: 12px;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 6px;
+            font-weight: 900;
+            padding: 5px 12px;
+            border-radius: 8px;
             text-transform: uppercase;
-            background: rgba(139, 92, 246, 0.25);
+            letter-spacing: 0.5px;
+            background: rgba(139, 92, 246, 0.2);
             color: #c084fc;
-            border: 1px solid rgba(139, 92, 246, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
         }
-        .rarity-tag.legendary { color: #f59e0b; background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); }
-        .rarity-tag.epic { color: #ec4899; background: rgba(236, 72, 153, 0.2); border-color: rgba(236, 72, 153, 0.5); }
-        .rarity-tag.rare { color: #3b82f6; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); }
-        .rarity-tag.common { color: #9ca3af; background: rgba(156, 163, 175, 0.2); border-color: rgba(156, 163, 175, 0.5); }
+        .rarity-tag.legendary { color: #f59e0b; background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.6); box-shadow: 0 0 16px rgba(245, 158, 11, 0.4); animation: pulseGlow 2s infinite alternate; }
+        .rarity-tag.epic { color: #ec4899; background: rgba(236, 72, 153, 0.2); border-color: rgba(236, 72, 153, 0.6); box-shadow: 0 0 16px rgba(236, 72, 153, 0.4); }
+        .rarity-tag.rare { color: #3b82f6; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.6); }
+        .rarity-tag.common { color: #9ca3af; background: rgba(156, 163, 175, 0.15); border-color: rgba(156, 163, 175, 0.3); }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); filter: brightness(1); }
+            100% { transform: scale(1.03); filter: brightness(1.2); }
+        }
+
+        .multiplier-badge {
+            font-size: 12px;
+            font-weight: 800;
+            color: #f43f5e;
+            background: rgba(244, 63, 94, 0.15);
+            border: 1px solid rgba(244, 63, 94, 0.4);
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
 
         .item-box {
-            height: 110px;
-            background: rgba(0, 0, 0, 0.35);
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+            height: 130px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             overflow: hidden;
+            z-index: 2;
         }
 
         .empty-slot-text {
             font-size: 13px;
             color: var(--text-muted);
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* Pixel Avatar */
+        /* Pixel Avatar Grid */
         .pixel-avatar {
             display: grid;
-            grid-template-columns: repeat(5, 14px);
-            grid-template-rows: repeat(5, 14px);
+            grid-template-columns: repeat(5, 20px);
+            grid-template-rows: repeat(5, 20px);
             gap: 2px;
+            animation: floatAvatar 4s ease-in-out infinite alternate;
+        }
+        @keyframes floatAvatar {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-4px) rotate(1deg); }
         }
         .pixel {
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            transition: background 0.3s;
         }
-        .pixel.on {
-            background: #ec4899;
-            box-shadow: 0 0 8px #ec4899;
-        }
-        .pixel.alt {
-            background: #8b5cf6;
-            box-shadow: 0 0 6px #8b5cf6;
-        }
-        .pixel.gold {
-            background: #f59e0b;
-            box-shadow: 0 0 8px #f59e0b;
-        }
+        .pixel.on { background: #ec4899; box-shadow: 0 0 10px #ec4899; }
+        .pixel.alt { background: #8b5cf6; box-shadow: 0 0 8px #8b5cf6; }
+        .pixel.gold { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+        .pixel.cyan { background: #06b6d4; box-shadow: 0 0 10px #06b6d4; }
 
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-        }
-
-        .stat-item {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 8px 2px;
-            text-align: center;
-            font-size: 11px;
-            font-weight: 700;
+        /* Formula details breakdown */
+        .formula-breakdown {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 800;
             color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 9px 12px;
+            border-radius: 10px;
+            z-index: 2;
         }
-        .stat-item span {
-            display: block;
-            font-weight: 900;
-            font-size: 15px;
+        .formula-breakdown span {
             color: #fff;
-            margin-top: 2px;
         }
 
-        /* Total Power Score inside the card */
+        /* Mega Power Box */
         .power-box {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15));
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(236, 72, 153, 0.18));
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 10px;
+            border-radius: 14px;
+            padding: 14px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+            z-index: 2;
         }
         .power-label {
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
             color: var(--text-muted);
-            font-weight: 800;
+            font-weight: 900;
         }
         .power-value {
-            font-size: 24px;
+            font-size: 30px;
             font-weight: 900;
             color: #fff;
-            text-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
-            margin: 2px 0;
-        }
-        .power-breakdown {
-            font-size: 12px;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-around;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            padding-top: 6px;
-            margin-top: 4px;
-            font-weight: 600;
+            text-shadow: 0 0 16px rgba(139, 92, 246, 0.8);
+            margin-top: 2px;
+            letter-spacing: 0.5px;
         }
 
-        /* Footer inside card for Screenshot (Bot handle & Call to action) */
+        /* Footer info */
         .card-footer-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             padding-top: 8px;
-            margin-top: 2px;
+            z-index: 2;
         }
         .card-bot-link {
-            font-size: 12px;
+            font-size: 11px;
             color: #c084fc;
-            font-weight: 800;
+            font-weight: 900;
         }
         .card-watermark {
-            font-size: 11px;
+            font-size: 10px;
             color: rgba(255, 255, 255, 0.4);
-            font-weight: 700;
-            letter-spacing: 0.5px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
         }
 
         /* Share Button */
         .share-btn {
             width: 100%;
-            background: rgba(59, 130, 246, 0.15);
-            color: #3b82f6;
-            border: 1px solid rgba(59, 130, 246, 0.4);
-            border-radius: 12px;
-            padding: 12px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
             font-size: 15px;
-            font-weight: 800;
+            font-weight: 900;
             cursor: pointer;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: background 0.2s ease;
+            letter-spacing: 1.2px;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+            transition: all 0.2s ease;
         }
         .share-btn:active {
-            background: rgba(59, 130, 246, 0.3);
+            transform: scale(0.97);
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
         }
     </style>
+
     <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- html2canvas for image generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
     
     <script>
         window.initialDropData = null;
         window.isAlreadyClaimed = false;
 
         (function() {
-            const CURRENT_VERSION = '2.7'; 
+            const CURRENT_VERSION = '4.5'; 
             const savedVersion = localStorage.getItem('app_version');
 
             if (savedVersion !== CURRENT_VERSION) {
@@ -324,14 +428,9 @@
                 localStorage.removeItem('drop_avatar');
                 localStorage.removeItem('drop_rarity');
                 localStorage.removeItem('drop_rarityClass');
-                localStorage.removeItem('drop_str');
-                localStorage.removeItem('drop_dex');
-                localStorage.removeItem('drop_int');
-                localStorage.removeItem('drop_luck');
-                localStorage.removeItem('drop_combat');
-                localStorage.removeItem('drop_luckScore');
-                localStorage.removeItem('drop_bonus');
-                localStorage.removeItem('drop_total');
+                localStorage.removeItem('drop_base');
+                localStorage.removeItem('drop_multiplier');
+                localStorage.removeItem('drop_power');
                 
                 localStorage.setItem('app_version', CURRENT_VERSION);
             }
@@ -344,19 +443,12 @@
                 const avatar = localStorage.getItem('drop_avatar');
                 const rarityText = localStorage.getItem('drop_rarity');
                 const rarityClass = localStorage.getItem('drop_rarityClass');
-                const str = localStorage.getItem('drop_str');
-                const dex = localStorage.getItem('drop_dex');
-                const int = localStorage.getItem('drop_int');
-                const luck = localStorage.getItem('drop_luck');
-                const combat = localStorage.getItem('drop_combat');
-                const luckScore = localStorage.getItem('drop_luckScore');
-                const rarityBonus = localStorage.getItem('drop_bonus');
-                const totalPower = localStorage.getItem('drop_total');
+                const base = localStorage.getItem('drop_base') || '0';
+                const multiplier = localStorage.getItem('drop_multiplier') || '1.0';
+                const power = localStorage.getItem('drop_power') || '0';
 
                 if (avatar && rarityText) {
-                    window.initialDropData = {
-                        avatar, rarityText, rarityClass, str, dex, int, luck, combat, luckScore, rarityBonus, totalPower
-                    };
+                    window.initialDropData = { avatar, rarityText, rarityClass, base, multiplier, power };
                 }
             }
         })();
@@ -368,36 +460,35 @@
         <div class="top-bar">
             <div class="app-title">Daily Catch</div>
             <div class="drop-rates">
-                <span class="rate-badge legendary">👑 0.5%</span>
-                <span class="rate-badge epic">🔮 3%</span>
-                <span class="rate-badge rare">💎 21.5%</span>
+                <span class="rate-badge legendary">👑 2%</span>
+                <span class="rate-badge epic">🔮 8%</span>
+                <span class="rate-badge rare">💎 25%</span>
             </div>
-            <button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+            <button class="sound-btn" id="soundToggle" onclick="toggleSound()" title="Toggle Sound">🔊</button>
         </div>
 
-        <div class="summon-box">
-            <script>
-                if (window.isAlreadyClaimed) {
-                    document.write(`<button class="summon-btn" id="summonBtn" disabled>SUMMON</button>`);
-                    document.write(`<div class="summon-status" id="summonStatus">Calculating time...</div>`);
-                } else {
-                    document.write(`<button class="summon-btn" id="summonBtn" onclick="triggerSummon()">SUMMON</button>`);
-                    document.write(`<div class="summon-status" id="summonStatus">Ready to summon!</div>`);
-                }
-            </script>
+        <!-- Dopamine Clicker Box -->
+        <div class="clicker-box" id="clickerBox">
+            <div class="clicker-target" id="clickTarget" onclick="handleLootClick(event)">
+                <img src="lootbox.png" alt="Lootbox" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><circle cx='60' cy='60' r='50' fill='%238b5cf6'/><text x='60' y='68' text-anchor='middle' fill='white' font-size='38' font-weight='bold' style='font-family:sans-serif'>?</text></svg>'">
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="clicker-status" id="clickerStatus">Tap box to open drop!</div>
         </div>
 
-        <!-- Карточка целиком (включая Score и ссылки) попадает в скриншот -->
-        <div class="card-container">
+        <div class="card-container" id="cardContainer">
             <div class="item-header">
                 <script>
                     if (window.initialDropData) {
                         document.write(`<span class="rarity-tag ${window.initialDropData.rarityClass}" id="itemRarity">${window.initialDropData.rarityText}</span>`);
+                        document.write(`<span class="multiplier-badge" id="multiplierBadge">⚡ x${window.initialDropData.multiplier} Mult</span>`);
                     } else {
                         document.write(`<span class="rarity-tag common" id="itemRarity">No Drop Yet</span>`);
+                        document.write(`<span class="multiplier-badge" id="multiplierBadge">⚡ x1.0 Mult</span>`);
                     }
                 </script>
-                <span style="font-size: 13px; color: var(--text-muted); font-weight: 650;">Drop Slot</span>
             </div>
             
             <div class="item-box" id="itemDisplay">
@@ -410,24 +501,21 @@
                 </script>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-item">STR <span id="statStr"><script>document.write(window.initialDropData ? window.initialDropData.str : '0');</script></span></div>
-                <div class="stat-item">DEX <span id="statDex"><script>document.write(window.initialDropData ? window.initialDropData.dex : '0');</script></span></div>
-                <div class="stat-item">INT <span id="statInt"><script>document.write(window.initialDropData ? window.initialDropData.int : '0');</script></span></div>
-                <div class="stat-item">LUCK <span id="statLuck"><script>document.write(window.initialDropData ? window.initialDropData.luck : '0');</script></span></div>
+            <div class="formula-breakdown" id="formulaBreakdown">
+                <script>
+                    if (window.initialDropData) {
+                        document.write(`<span>Base:</span> ${Number(window.initialDropData.base).toLocaleString()} &nbsp;×&nbsp; <span>Mult:</span> ${window.initialDropData.multiplier}`);
+                    } else {
+                        document.write(`<span>Base:</span> 0 &nbsp;×&nbsp; <span>Mult:</span> 1.0`);
+                    }
+                </script>
             </div>
 
             <div class="power-box">
                 <div class="power-label">Total Power Score</div>
-                <div class="power-value" id="totalPower"><script>document.write(window.initialDropData ? window.initialDropData.totalPower : '0');</script></div>
-                <div class="power-breakdown">
-                    <span>Combat: <strong id="breakdownCombat"><script>document.write(window.initialDropData ? window.initialDropData.combat : '0');</script></strong></span>
-                    <span>Luck: <strong id="breakdownLuck"><script>document.write(window.initialDropData ? window.initialDropData.luckScore : '0');</script></strong></span>
-                    <span>Bonus: <strong id="breakdownBonus"><script>document.write(window.initialDropData ? window.initialDropData.rarityBonus : '0');</script></strong></span>
-                </div>
+                <div class="power-value" id="totalPower"><script>document.write(window.initialDropData ? Number(window.initialDropData.power).toLocaleString() : '0');</script></div>
             </div>
 
-            <!-- Вся информация о боте теперь прямо на картинке -->
             <div class="card-footer-info">
                 <span class="card-bot-link">t.me/Daily_Catch_Bot</span>
                 <span class="card-watermark">Daily Drop</span>
@@ -440,10 +528,12 @@
     <script>
         let soundEnabled = true;
         let audioCtx = null;
+        let clicksRemaining = 10;
+        const totalClicksNeeded = 10;
 
         function generateRandomAvatar() {
             let html = '<div class="pixel-avatar">';
-            const types = ['', 'on', 'alt', 'gold'];
+            const types = ['', 'on', 'alt', 'gold', 'cyan'];
             for (let i = 0; i < 25; i++) {
                 const cls = types[Math.floor(Math.random() * types.length)];
                 html += `<div class="pixel ${cls}"></div>`;
@@ -454,14 +544,18 @@
 
         function rollRarity() {
             const rand = Math.random() * 100;
-            if (rand < 0.5) {
-                return { name: 'Legendary Apex', cssClass: 'legendary', bonus: 2500 };
-            } else if (rand < 3.5) {
-                return { name: 'Epic Cyber Core', cssClass: 'epic', bonus: 1000 };
-            } else if (rand < 25.0) {
-                return { name: 'Rare Quantum Item', cssClass: 'rare', bonus: 300 };
+            if (rand < 2.0) {
+                const base = Math.floor(Math.random() * 125000) + 75000;
+                return { name: 'Legendary Apex', cssClass: 'legendary', basePower: base };
+            } else if (rand < 10.0) {
+                const base = Math.floor(Math.random() * 30000) + 20000;
+                return { name: 'Epic Cyber Core', cssClass: 'epic', basePower: base };
+            } else if (rand < 35.0) {
+                const base = Math.floor(Math.random() * 10000) + 5000;
+                return { name: 'Rare Quantum Item', cssClass: 'rare', basePower: base };
             } else {
-                return { name: 'Common Drop', cssClass: 'common', bonus: 0 };
+                const base = Math.floor(Math.random() * 3500) + 1000;
+                return { name: 'Common Drop', cssClass: 'common', basePower: base };
             }
         }
 
@@ -471,7 +565,7 @@
             }
         }
 
-        function playBeep(freq, type, duration) {
+        function playCrackSound() {
             if (!soundEnabled) return;
             initAudio();
             if (!audioCtx) return;
@@ -479,54 +573,149 @@
             try {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = type;
-                osc.frequency.value = freq;
-                
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(45, audioCtx.currentTime + 0.08);
+
+                gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
 
                 osc.start();
-                osc.stop(audioCtx.currentTime + duration);
+                osc.stop(audioCtx.currentTime + 0.08);
             } catch(e) {}
+        }
+
+        function playVictorySound() {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, index) => {
+                try {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+
+                    gain.gain.setValueAtTime(0.12, now + index * 0.07);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + index * 0.07 + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now + index * 0.07);
+                    osc.stop(now + index * 0.07 + 0.3);
+                } catch(e) {}
+            });
         }
 
         function toggleSound() {
             soundEnabled = !soundEnabled;
             document.getElementById('soundToggle').innerText = soundEnabled ? '🔊' : '🔇';
-            playBeep(440, 'sine', 0.1);
         }
+
+        // Particle Burst Effect on Click
+        function createParticleBurst(x, y) {
+            const count = 22;
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'fixed';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.width = '7px';
+                particle.style.height = '7px';
+                particle.style.borderRadius = '50%';
+                const colors = ['#ec4899', '#8b5cf6', '#38bdf8', '#f59e0b'];
+                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '9999';
+                particle.style.boxShadow = `0 0 8px ${particle.style.backgroundColor}`;
+                document.body.appendChild(particle);
+
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 90 + 25;
+                const destinationX = Math.cos(angle) * speed;
+                const destinationY = Math.sin(angle) * speed;
+
+                particle.animate([
+                    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                    { transform: `translate(${destinationX}px, ${destinationY}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 500 + Math.random() * 350,
+                    easing: 'cubic-bezier(0, .9, .57, 1)'
+                }).onfinish = () => particle.remove();
+            }
+        }
+
+        // Holographic Card Tilt Effect with Mouse/Touch coordinates
+        const cardContainer = document.getElementById('cardContainer');
+        cardContainer.addEventListener('mousemove', (e) => {
+            const rect = cardContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            cardContainer.style.setProperty('--mouse-x', `${(x / rect.width) * 100}%`);
+            cardContainer.style.setProperty('--mouse-y', `${(y / rect.height) * 100}%`);
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = ((y - centerY) / centerY) * -6;
+            const rotateY = ((x - centerX) / centerX) * 6;
+
+            cardContainer.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
+        });
+
+        cardContainer.addEventListener('mouseleave', () => {
+            cardContainer.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+            cardContainer.style.setProperty('--mouse-x', '50%');
+            cardContainer.style.setProperty('--mouse-y', '50%');
+        });
 
         window.addEventListener('DOMContentLoaded', () => {
             if (window.isAlreadyClaimed) {
+                lockClickerUI();
                 updateCountdown();
                 setInterval(updateCountdown, 1000);
+            } else {
+                updateProgressUI();
             }
         });
 
-        function applyDataToUI(data) {
-            document.getElementById('itemDisplay').innerHTML = data.avatar;
-            
-            const rarityTag = document.getElementById('itemRarity');
-            rarityTag.innerText = data.rarityText;
-            rarityTag.className = `rarity-tag ${data.rarityClass}`;
-
-            document.getElementById('statStr').innerText = data.str;
-            document.getElementById('statDex').innerText = data.dex;
-            document.getElementById('statInt').innerText = data.int;
-            document.getElementById('statLuck').innerText = data.luck;
-
-            document.getElementById('breakdownCombat').innerText = data.combat;
-            document.getElementById('breakdownLuck').innerText = data.luckScore;
-            document.getElementById('breakdownBonus').innerText = data.rarityBonus;
-            document.getElementById('totalPower').innerText = data.totalPower;
+        function updateProgressUI() {
+            const percentage = (clicksRemaining / totalClicksNeeded) * 100;
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('clickerStatus').innerText = `Tap box: ${clicksRemaining} left`;
         }
 
-        function lockSummonButton() {
-            const btn = document.getElementById('summonBtn');
-            btn.disabled = true;
+        function handleLootClick(event) {
+            const lastClaimDate = localStorage.getItem('daily_drop_last_claim');
+            const today = new Date().toDateString();
+            if (lastClaimDate === today || clicksRemaining <= 0) return;
+
+            clicksRemaining--;
+            playCrackSound();
+            createParticleBurst(event.clientX, event.clientY);
+
+            const target = document.getElementById('clickTarget');
+            target.classList.remove('shake');
+            void target.offsetWidth; 
+            target.classList.add('shake');
+
+            updateProgressUI();
+
+            if (clicksRemaining === 0) {
+                triggerSummon();
+            }
+        }
+
+        function lockClickerUI() {
+            const box = document.getElementById('clickerBox');
+            box.style.opacity = '0.65';
+            document.getElementById('clickTarget').style.pointerEvents = 'none';
             updateCountdown();
             setInterval(updateCountdown, 1000);
         }
@@ -540,61 +729,57 @@
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-            document.getElementById('summonStatus').innerText = 
+            document.getElementById('clickerStatus').innerText = 
                 `Next drop in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
 
         function triggerSummon() {
             const lastClaimDate = localStorage.getItem('daily_drop_last_claim');
             const today = new Date().toDateString();
-
             if (lastClaimDate === today) return;
 
-            playBeep(587.33, 'triangle', 0.15);
-            setTimeout(() => playBeep(880, 'sine', 0.3), 150);
+            playVictorySound();
 
-            const str = Math.floor(Math.random() * 201) + 50;   
-            const dex = Math.floor(Math.random() * 201) + 50;   
-            const int = Math.floor(Math.random() * 201) + 50;   
-            const luck = Math.floor(Math.random() * 91) + 10;   
-            
+            // Trigger Canvas Confetti explosion!
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.5 },
+                    colors: ['#8b5cf6', '#ec4899', '#f59e0b', '#38bdf8']
+                });
+            }
+
             const rolled = rollRarity();
             const avatarHTML = generateRandomAvatar();
 
-            const combat = (str + dex + int) * 15;
-            const luckScore = luck * 40;
-            const totalPower = combat + luckScore + rolled.bonus;
+            const randomMultiplier = (Math.random() * 2.0 + 1.0).toFixed(1);
+            const finalPower = Math.floor(rolled.basePower * parseFloat(randomMultiplier));
 
-            const dropData = {
-                avatar: avatarHTML,
-                rarityText: rolled.name,
-                rarityClass: rolled.cssClass,
-                str: str,
-                dex: dex,
-                int: int,
-                luck: luck,
-                combat: combat,
-                luckScore: luckScore,
-                rarityBonus: rolled.bonus,
-                totalPower: totalPower
-            };
+            document.getElementById('itemDisplay').innerHTML = avatarHTML;
+            
+            const rarityTag = document.getElementById('itemRarity');
+            rarityTag.innerText = rolled.name;
+            rarityTag.className = `rarity-tag ${rolled.cssClass}`;
+            
+            document.getElementById('multiplierBadge').innerText = `⚡ x${randomMultiplier} Mult`;
+            document.getElementById('formulaBreakdown').innerHTML = `<span>Base:</span> ${rolled.basePower.toLocaleString()} &nbsp;×&nbsp; <span>Mult:</span> ${randomMultiplier}`;
+            document.getElementById('totalPower').innerText = finalPower.toLocaleString();
 
-            applyDataToUI(dropData);
+            // Add bounce effect to card
+            const card = document.getElementById('cardContainer');
+            card.classList.add('bounce-effect');
+            setTimeout(() => card.classList.remove('bounce-effect'), 400);
 
             localStorage.setItem('daily_drop_last_claim', today);
             localStorage.setItem('drop_avatar', avatarHTML);
             localStorage.setItem('drop_rarity', rolled.name);
             localStorage.setItem('drop_rarityClass', rolled.cssClass);
-            localStorage.setItem('drop_str', str);
-            localStorage.setItem('drop_dex', dex);
-            localStorage.setItem('drop_int', int);
-            localStorage.setItem('drop_luck', luck);
-            localStorage.setItem('drop_combat', combat);
-            localStorage.setItem('drop_luckScore', luckScore);
-            localStorage.setItem('drop_bonus', rolled.bonus);
-            localStorage.setItem('drop_total', totalPower);
+            localStorage.setItem('drop_base', rolled.basePower);
+            localStorage.setItem('drop_multiplier', randomMultiplier);
+            localStorage.setItem('drop_power', finalPower);
 
-            lockSummonButton();
+            lockClickerUI();
         }
 
         async function shareToTelegram() {
@@ -602,20 +787,21 @@
             const today = new Date().toDateString();
 
             if (lastClaimDate !== today) {
-                alert('Make a summon first before sharing your drop!');
+                alert('Open your drop first before sharing!');
                 return;
             }
 
             const cardElement = document.querySelector('.card-container');
             const botUrl = 'https://t.me/Daily_Catch_Bot';
+            const total = document.getElementById('totalPower').innerText;
+            const rarity = document.getElementById('itemRarity').innerText;
+            const mult = document.getElementById('multiplierBadge').innerText;
             
-            // Текст теперь передаем пустой, чтобы в чат улетала исключительно одна картинка, 
-            // так как вся информация (Score, редкость, ссылка на бота) уже запечена на самой картинке.
-            const shareText = ''; 
+            const shareText = `🔥 My Daily Catch Drop!\n🏆 ${rarity}\n⚡ Power Score: ${total} (${mult})\n\n👉 Try your luck in @Daily_Catch_Bot`;
 
             try {
                 const canvas = await html2canvas(cardElement, {
-                    backgroundColor: '#0b0f19',
+                    backgroundColor: '#070913',
                     scale: 2,
                     logging: false
                 });
@@ -641,7 +827,7 @@
                         }
                     } else {
                         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
-                            window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent('My Daily Catch Drop!')}`);
+                            window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(shareText)}`);
                         } else {
                             alert('Sharing images as files is not supported on this device/browser.');
                         }
